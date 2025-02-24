@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib as joblib
+import keras
+import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
@@ -10,6 +12,16 @@ def scaler_function(dataframe):
     standard_scaler = joblib.load('./scalers/standard_scaler.bin')
     dataframe = standard_scaler.transform(dataframe)
     return dataframe
+
+# loading the model and making predictions
+def load_predict(dataframe):
+    modelX = keras.saving.load_model("./models/model-x.h5")
+    modelY = keras.saving.load_model("./models/model-y.h5")
+    modelZ = keras.saving.load_model("./models/model-z.h5")
+    predictionX = modelX.predict(dataframe)
+    predictionY = modelY.predict(dataframe)
+    predictionZ = modelZ.predict(dataframe)
+    return predictionX, predictionY, predictionZ
 
 # actual website
 st.title('CM Coordinates Predictor')
@@ -34,4 +46,8 @@ with st.form('Coordinate Details: '):
             'PM_y': [PM_y],
             'PP_x': [PP_x]
         })
-        scaler_function(dataframe)
+        dataframe = scaler_function(dataframe)
+        predictionX, predictionY, predictionZ = load_predict(dataframe)
+        st.write(f"X: {predictionX}")
+        st.write(f"Y: {predictionY}")
+        st.write(f"Z: {predictionZ}")
