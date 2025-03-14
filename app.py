@@ -7,6 +7,13 @@ import tensorflow as tf
 
 from sklearn.preprocessing import StandardScaler
 
+# model mapping definition
+model_mapping = {
+    "Centromedian nucleus of Thalamus - Centroid": "CM",
+    "Centromedian nucleus of Thalamus - ESTEL trial": "CM_ESTEL",
+    "Anterior Nucleus of Thalamus - Centroid": "ANT"
+}
+
 # scaling functions
 def scaler_function(dataframe):
     standard_scaler = joblib.load('./scalers/standard_scaler.bin')
@@ -14,10 +21,13 @@ def scaler_function(dataframe):
     return dataframe
 
 # loading the model and making predictions
-def load_predict(dataframe):
-    modelX = keras.saving.load_model("./models/model-x.h5")
-    modelY = keras.saving.load_model("./models/model-y.h5")
-    modelZ = keras.saving.load_model("./models/model-z.h5")
+def load_predict(dataframe, selection):
+    if(selection == None):
+        raise Exception("Please select a Prediction Model")
+    
+    modelX = keras.saving.load_model("./models/" + model_mapping[selection] + "/model-x.h5")
+    modelY = keras.saving.load_model("./models/" + model_mapping[selection] + "/model-y.h5")
+    modelZ = keras.saving.load_model("./models/" + model_mapping[selection] + "/model-z.h5")
     predictionX = modelX.predict(dataframe)
     predictionY = modelY.predict(dataframe)
     predictionZ = modelZ.predict(dataframe)
@@ -58,6 +68,12 @@ with st.form('Coordinate Details: '):
     PP_R_x = st.number_input('x coordinate (mm)', min_value=-100.0, max_value=100.0, value=0.0, key = 11)
     PP_R_y = st.number_input('y coordinate (mm)', min_value=-100.0, max_value=100.0, value=0.0, key = 12)
 
+    model_selection = st.selectbox("Select the prediction type:", [
+        "Centromedian nucleus of Thalamus - Centroid", 
+        "Centromedian nucleus of Thalamus - ESTEL trial", 
+        "Anterior Nucleus of Thalamus - Centroid"
+        ], index = None)
+
     submitted = st.form_submit_button("Predict")
     if submitted:
         leftDataframe = pd.DataFrame({
@@ -80,8 +96,8 @@ with st.form('Coordinate Details: '):
         })
         leftDataframe = scaler_function(leftDataframe)
         rightDataframe = scaler_function(rightDataframe)
-        leftPredictionX, leftPredictionY, leftPredictionZ = load_predict(leftDataframe)
-        rightPredictionX, rightPredictionY, rightPredictionZ = load_predict(rightDataframe)
+        leftPredictionX, leftPredictionY, leftPredictionZ = load_predict(leftDataframe, model_selection)
+        rightPredictionX, rightPredictionY, rightPredictionZ = load_predict(rightDataframe, model_selection)
         st.write(f"Left Hemisphere")
         st.write(f"X: {leftPredictionX}")
         st.write(f"Y: {leftPredictionY}")
